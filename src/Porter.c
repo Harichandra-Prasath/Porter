@@ -24,7 +24,6 @@ int port(char* name,char* path) {
     char* _name = strdup(name);
     char* _path = strdup(path);      // for subdirectories
     char* _Tpath = strdup(path);
-    _Tpath = calloc(1024,sizeof(char));   // true path can never be more thant this
 
     strcpy(_name,name);
     strcpy(_path,path);
