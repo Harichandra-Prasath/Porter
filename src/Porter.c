@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/inotify.h>
 #include <string.h>
 #include <unistd.h>
@@ -20,14 +21,11 @@ const char Directories[4][10] = {"Images/","Media/","Docs/","Misc/"};
 int Flags[4] = {0,0,0,0};
 
 int port(char* name,char* path) {
-    char* _name;
-    char* _path;      // for subdirectories
-    char* _Tpath;
-    _Tpath = calloc(1024,sizeof(char));   // true path can never be more thant this
 
-    strcpy(_name,name);
-    strcpy(_path,path);
-    strcpy(_Tpath,path);
+    char* _name = strdup(name);
+    char* _path = strdup(path);      // for subdirectories
+    char* _Tpath = strdup(path);
+
 
     char* token = strtok(_name,".");
     char* extension;
