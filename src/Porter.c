@@ -21,13 +21,11 @@ const char Directories[4][10] = {"Images/","Media/","Docs/","Misc/"};
 int Flags[4] = {0,0,0,0};
 
 int port(char* name,char* path) {
+
     char* _name = strdup(name);
     char* _path = strdup(path);      // for subdirectories
     char* _Tpath = strdup(path);
 
-    strcpy(_name,name);
-    strcpy(_path,path);
-    strcpy(_Tpath,path);
 
     char* token = strtok(_name,".");
     char* extension;
