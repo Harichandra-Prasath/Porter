@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #define ERR_INIT_FILE_DESCRIPTOR 1
 #define ERR_INIT_WATCH_DESCRIPTOR 2
@@ -20,22 +21,55 @@ const char Types[3][4][10] = {{"png","jpg","jpeg","webp"},
 const char* Directories[] = {"Images","Media","Docs","Misc"};
 int Flags[4] = {0,0,0,0};
 
-int port(char* name,char* path) {
 
-    // This below loop is to prevent creation of folder to register as a creation and moving
-    // If the new create is Directory then ignore the porting
-    for (int i=0;i<4;i++){
-        if (strcmp(Directories[i],name)==0){
-            return 1;
+int handleDir(int _dir,char* _path){
+    int err;
+    if (Flags[_dir]==0){
+        fprintf(stdout,"%s SubDirectory not found\nAttempting to create the subDirectory...\n",Directories[_dir]);
+        Flags[_dir]=1;
+        err = mkdir(strcat(strcat(_path,Directories[_dir]),"/"),00700);  // Giving read,write,execute access to current user
+        if (err==-1){
+            fprintf(stderr,"Error in creating the directory\n");
+            return -1;
         }
+        fprintf(stdout,"%s SubDirectory Created\n",Directories[_dir]);
+    }else{
+        strcat(strcat(_path,Directories[_dir]),"/");
+        // if directory already exist, on making subdirectory path will be updated
+        // to path/subDirectory
+        fprintf(stdout,"%s SubDirectory Exists already\nSkipping Creation of SubDirectory..\n",Directories[_dir]);
     }
+    return 0;
+}
+
+int Is_Dir(char* file){
+    struct stat sb;
+    int err =stat(file, &sb);
+    if (err==-1){
+        fprintf(stderr,"Error in getting the stat\n");  
+    }
+    return S_ISDIR(sb.st_mode);
+}
+
+int port(char* name,char* path) {
+    printf("%s\n",name);
+    char* _Tpath = calloc(1024,sizeof(char));  //copy of the  downloads path
+    strcpy(_Tpath,path);
+    strcat(_Tpath,name); // actual file path
+
     
+    int ret = Is_Dir(_Tpath);
+    if (ret==1){
+        fprintf(stdout,"Ignoring the folder creation...\n");
+        free(_Tpath);
+        return 1;
+    }
 
     char* _name = strdup(name);
     char* _path = calloc(1024,sizeof(char));      // for subdirectories
-    char* _Tpath = calloc(1024,sizeof(char));
+    
     strcpy(_path,path);
-    strcpy(_Tpath,path);
+   
 
     char* token = strtok(_name,".");
     char* extension;
@@ -45,38 +79,24 @@ int port(char* name,char* path) {
         token = strtok(NULL,".");
     }
 
-    strcat(_Tpath,name); // actual file path
+    
 
-
+    int i;
     // got the extension.. Now start with the directory matching
-    for (int i=0;i<3;i++){
+    for (i=0;i<3;i++){
 
         // now extension matching
         for (int j=0;j<4;j++){
             // match found
             if (strcmp(Types[i][j],extension)==0){
-                //Flags to check whether the subDirectory is already present
-                if (Flags[i]==0){
-                    fprintf(stdout,"%s SubDirectory not found\nAttempting to create the subDirectory...\n",Directories[i]);
-                    Flags[i]=1;
-                    err = mkdir(strcat(strcat(_path,Directories[i]),"/"),00700);  // Giving read,write,execute access to current user
-                    if (err==-1){
-                        fprintf(stderr,"Error in creating the directory");
-                        return -1;
-                    }
-                    fprintf(stdout,"%s SubDirectory Created\n",Directories[i]);
-                }else{
-                    strcat(_path,Directories[i]);
-                    // if directory already exist, on making subdirectory path will be updated
-                    // to path/subDirectory
-
-
-                    fprintf(stdout,"%s SubDirectory Exists already\nSkipping Creation of SubDirectory..\n",Directories[i]);
+                
+                //handle Dir function to check, create the folders
+                err = handleDir(i,_path);
+                if (err==-1){
+                    return -1;
                 }
 
                 strcat(_path,name); // new file path inside the subdirectoy
-                // printf("%s\n",path);
-                // printf("%s\n",_path);
                 err = rename(_Tpath,_path);
                 if (err==-1){
                     fprintf(stderr,"Problem in porting...\n");
@@ -91,15 +111,7 @@ int port(char* name,char* path) {
     }
     }
     // loop exited means no match found ... put it in misc
-    strcat(_path,"Misc/");
-    if (Flags[3]==0){
-        Flags[3]=1;
-        err = mkdir(_path,00700);  // Giving read,write,execute access to current user
-        if (err==-1){
-            fprintf(stderr,"Error in creating the directory\n");
-            return -1;
-        }
-    }    
+    handleDir(i,_path);
     
     strcat(_path,name);
     err = rename(_Tpath,_path);
