@@ -14,12 +14,14 @@
 #define ERR_READING_THE_EVENT 4
 
 // To sort it in different subDirectories
-const char Types[3][4][10] = {{"png","jpg","jpeg","webp"},
-                              {"mp4","mp3","mkv"},
-                              {"pdf","txt"}};
+const char Types[][10][8] = {{"png","jpg","jpeg","webp"}, //10 represents the no of extensions in same type
+                              {"mp4","mp3","mkv","mov","avi","wav"},
+                              {"pdf","txt","xls","ppt"},
+                              {"zip","rar","tar","gz"},
+                              {"html","css","go","py","c","cpp","js"}};
 
-const char* Directories[] = {"Images","Media","Docs","Misc"};
-int Flags[4] = {0,0,0,0};
+const char* Directories[] = {"Images","Media","Docs","Packages","Codes","Misc"};
+int Flags[] = {0,0,0,0,0,0};
 
 
 int handleDir(int _dir,char* _path){
@@ -52,7 +54,6 @@ int Is_Dir(char* file){
 }
 
 int port(char* name,char* path) {
-    printf("%s\n",name);
     char* _Tpath = calloc(1024,sizeof(char));  //copy of the  downloads path
     strcpy(_Tpath,path);
     strcat(_Tpath,name); // actual file path
@@ -83,11 +84,12 @@ int port(char* name,char* path) {
 
     int i;
     // got the extension.. Now start with the directory matching
-    for (i=0;i<3;i++){
+    for (i=0;i<5;i++){
 
         // now extension matching
-        for (int j=0;j<4;j++){
+        for (int j=0;j<10;j++){
             // match found
+            
             if (strcmp(Types[i][j],extension)==0){
                 
                 //handle Dir function to check, create the folders
@@ -110,6 +112,7 @@ int port(char* name,char* path) {
             }
     }
     }
+
     // loop exited means no match found ... put it in misc
     handleDir(i,_path);
     
@@ -129,7 +132,6 @@ int port(char* name,char* path) {
 // As we are only monitoring the donwloads folder, we can hard code it for inotify
 
 int main() {
-
     int fd;
     int* wd;
     char buf[4096];
