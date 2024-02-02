@@ -17,15 +17,25 @@ const char Types[3][4][10] = {{"png","jpg","jpeg","webp"},
                               {"mp4","mp3","mkv"},
                               {"pdf","txt"}};
 
-const char Directories[4][10] = {"Images/","Media/","Docs/","Misc/"};
+const char* Directories[] = {"Images","Media","Docs","Misc"};
 int Flags[4] = {0,0,0,0};
 
 int port(char* name,char* path) {
 
-    char* _name = strdup(name);
-    char* _path = strdup(path);      // for subdirectories
-    char* _Tpath = strdup(path);
+    // This below loop is to prevent creation of folder to register as a creation and moving
+    // If the new create is Directory then ignore the porting
+    for (int i=0;i<4;i++){
+        if (strcmp(Directories[i],name)==0){
+            return 1;
+        }
+    }
+    
 
+    char* _name = strdup(name);
+    char* _path = calloc(1024,sizeof(char));      // for subdirectories
+    char* _Tpath = calloc(1024,sizeof(char));
+    strcpy(_path,path);
+    strcpy(_Tpath,path);
 
     char* token = strtok(_name,".");
     char* extension;
@@ -34,6 +44,10 @@ int port(char* name,char* path) {
         extension = token;
         token = strtok(NULL,".");
     }
+
+    strcat(_Tpath,name); // actual file path
+
+
     // got the extension.. Now start with the directory matching
     for (int i=0;i<3;i++){
 
@@ -41,13 +55,11 @@ int port(char* name,char* path) {
         for (int j=0;j<4;j++){
             // match found
             if (strcmp(Types[i][j],extension)==0){
-                fprintf(stdout,"File Created of type-%s\n",extension);
-
                 //Flags to check whether the subDirectory is already present
                 if (Flags[i]==0){
                     fprintf(stdout,"%s SubDirectory not found\nAttempting to create the subDirectory...\n",Directories[i]);
                     Flags[i]=1;
-                    err = mkdir(strcat(_path,Directories[i]),00700);  // Giving read,write,execute access to current user
+                    err = mkdir(strcat(strcat(_path,Directories[i]),"/"),00700);  // Giving read,write,execute access to current user
                     if (err==-1){
                         fprintf(stderr,"Error in creating the directory");
                         return -1;
@@ -62,8 +74,6 @@ int port(char* name,char* path) {
                     fprintf(stdout,"%s SubDirectory Exists already\nSkipping Creation of SubDirectory..\n",Directories[i]);
                 }
 
-                // some casting as rename only work with constant types
-                strcat(_Tpath,name); // actual file path
                 strcat(_path,name); // new file path inside the subdirectoy
                 // printf("%s\n",path);
                 // printf("%s\n",_path);
@@ -72,12 +82,35 @@ int port(char* name,char* path) {
                     fprintf(stderr,"Problem in porting...\n");
                     return -1;  //not using exit to make it try for next files
                 }
-                
+                fprintf(stdout,"File Ported to %s\n",_path);
+                free(_path);
                 free(_Tpath);
+                
                 return 0;
             }
     }
     }
+    // loop exited means no match found ... put it in misc
+    strcat(_path,"Misc/");
+    if (Flags[3]==0){
+        Flags[3]=1;
+        err = mkdir(_path,00700);  // Giving read,write,execute access to current user
+        if (err==-1){
+            fprintf(stderr,"Error in creating the directory\n");
+            return -1;
+        }
+    }    
+    
+    strcat(_path,name);
+    err = rename(_Tpath,_path);
+    if (err==-1){
+        fprintf(stderr,"Error in porting file...\n");
+    }
+
+    fprintf(stdout,"File Ported to %s\n",_path);
+    free(_path);
+    free(_Tpath);
+    return 0;
     
 }
 
@@ -139,12 +172,11 @@ int main() {
                 int code;
                 char* name;
 
-                fprintf(stdout,"File created\n");
                 name = calloc(strlen(event->name)+1,sizeof(char));
                 strcpy(name,event->name);
                 code = port(name,path);
                 if (code==-1){
-                    fprintf(stderr,"Error in porting to the subdirectory"); //not exiting to try for next events
+                    fprintf(stderr,"Error in porting to the subdirectory\n"); //not exiting to try for next events
                 }
                 free(name);
 
