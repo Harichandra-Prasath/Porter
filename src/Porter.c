@@ -21,28 +21,6 @@ const char Types[][10][8] = {{"png","jpg","jpeg","webp"}, //10 represents the no
                               {"html","css","go","py","c","cpp","js"}};
 
 const char* Directories[] = {"Images","Media","Docs","Packages","Codes","Misc"};
-int Flags[] = {0,0,0,0,0,0};
-
-
-int handleDir(int _dir,char* _path){
-    int err;
-    if (Flags[_dir]==0){
-        fprintf(stdout,"%s SubDirectory not found\nAttempting to create the subDirectory...\n",Directories[_dir]);
-        Flags[_dir]=1;
-        err = mkdir(strcat(strcat(_path,Directories[_dir]),"/"),00700);  // Giving read,write,execute access to current user
-        if (err==-1){
-            fprintf(stderr,"Error in creating the directory\n");
-            return -1;
-        }
-        fprintf(stdout,"%s SubDirectory Created\n",Directories[_dir]);
-    }else{
-        strcat(strcat(_path,Directories[_dir]),"/");
-        // if directory already exist, on making subdirectory path will be updated
-        // to path/subDirectory
-        fprintf(stdout,"%s SubDirectory Exists already\nSkipping Creation of SubDirectory..\n",Directories[_dir]);
-    }
-    return 0;
-}
 
 int Is_Dir(char* file){
     struct stat sb;
@@ -52,6 +30,30 @@ int Is_Dir(char* file){
     }
     return S_ISDIR(sb.st_mode);
 }
+
+int handleDir(int _dir,char* _path){
+    int err;
+    strcat(strcat(_path,Directories[_dir]),"/");  
+    err = Is_Dir(_path);
+
+    if (err==1){          //folder already created
+        fprintf(stdout,"%s SubDirectory Exists already\nSkipping Creation of SubDirectory..\n",Directories[_dir]);
+        return 0;
+    }
+    
+    else{   //folder is not present
+        fprintf(stdout,"%s SubDirectory not found\nAttempting to create the subDirectory...\n",Directories[_dir]);
+        err = mkdir((_path),00700);
+        if (err==-1){
+            fprintf(stderr,"Error in creating the directory\n");
+            return -1;
+        }
+        fprintf(stdout,"%s SubDirectory Created\n",Directories[_dir]);
+        return 0;
+    }
+}
+
+
 
 int port(char* name,char* path) {
     char* _Tpath = calloc(1024,sizeof(char));  //copy of the  downloads path

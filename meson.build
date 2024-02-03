@@ -1,3 +1,3 @@
 project('Porter', 'c')
 
-executable('Porter', 'src/Porter.c')
+executable('Porterd', 'src/Porter.c')
